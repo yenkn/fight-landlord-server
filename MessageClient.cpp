@@ -66,7 +66,7 @@ void MessageClient::onDataRecived(const string &data) {
             int packageId = *(int *)reciveBuffer.data();
             auto result = commandCallbacks.find(packageId);
             if(result != commandCallbacks.end()) {
-                result->second(string(reciveBuffer.data() + 4, reciveBuffer.size() - 5));
+                result->second(unescape(string(reciveBuffer.data() + 4, reciveBuffer.size() - 5)));
             }
             inPackage = false;
         } else if(inPackage) {

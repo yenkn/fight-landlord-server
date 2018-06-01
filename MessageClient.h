@@ -34,7 +34,8 @@ protected:
     static const char ESCAPE_CHAR = '\\';
     static const char DIVIDER[];
 
-    void onDataRecived(const string &);
+    void onDataRecived(const string &) override;
+    virtual void onMessageRecived(const string &);
 
 private:
     map<int, command_callback> commandCallbacks;
