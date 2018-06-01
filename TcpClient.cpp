@@ -19,8 +19,8 @@ TcpClient::~TcpClient() {
     close(client_fd);
 }
 
-void TcpClient::Send(const char *data, size_t len) {
-    write_queue.push_back(new Buffer(data, len));
+void TcpClient::Send(const string &data) {
+    writeQueue.push_back(data);
     ev_io.set(ev::READ|ev::WRITE);
 }
 
@@ -36,7 +36,7 @@ void TcpClient::callback(ev::io &watcher, int revents) {
     if (revents & EV_WRITE)
         writeCallback(watcher);
 
-    if (write_queue.empty()) {
+    if (writeQueue.empty()) {
         ev_io.set(ev::READ);
     } else {
         ev_io.set(ev::READ|ev::WRITE);
@@ -57,31 +57,31 @@ void TcpClient::readCallback(ev::io &watcher) {
         // connection closed by peer
         return;
     } else {
-        onDataRecived(buf, nread);
+        onDataRecived(string(buf, nread));
     }
 }
 
 void TcpClient::writeCallback(ev::io &watcher) {
-    if (write_queue.empty()) {
+    if (writeQueue.empty()) {
         ev_io.set(ev::READ);
         return;
     }
 
-    Buffer* buffer = write_queue.front();
+    auto buffer = writeQueue.front();
+    writeQueue.pop_front();
 
-    ssize_t written = write(watcher.fd, buffer->seek(), buffer->size());
+    ssize_t written = write(watcher.fd, buffer.data(), buffer.size());
     if (written < 0) {
         perror("read error");
         return;
     }
 
-    buffer->offset += written;
-    if (buffer->empty()) {
-        write_queue.pop_front();
-        delete buffer;
+    buffer = buffer.substr(written);
+    if (!buffer.empty()) {
+        writeQueue.push_front(std::move(buffer));
     }
 }
 
-void TcpClient::onDataRecived(const char *data, ssize_t len) {
-    printf("recv: %s", data);
+void TcpClient::onDataRecived(const string &data) {
+    printf("recv: %s", data.c_str());
 }

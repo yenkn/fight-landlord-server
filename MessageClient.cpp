@@ -10,40 +10,36 @@ const char MessageClient::DIVIDER[] { '!', 's' };
 MessageClient::MessageClient(int fd) : TcpClient(fd) {
 }
 
-MessageClient::~MessageClient() {
-    //ev_async.stop();
-}
-
-int MessageClient::SendMessage(const Buffer &data) {
+int MessageClient::SendMessage(const string &data) {
     int packageId = currentPackageId++;
-    Buffer divider(DIVIDER, 2);
-    DynamicBuffer buffer(divider);
-    buffer.Append(reinterpret_cast<char *>(&packageId), 4);
-    buffer.Append(escape(data));
-    buffer.Append(DIVIDER[1]);
-    buffer.Append(DIVIDER[0]);
-    Send(buffer.cbegin(), buffer.size());
+    string divider(DIVIDER, 2);
+    string buffer(divider);
+    buffer.append(reinterpret_cast<char *>(&packageId), 4);
+    buffer.append(escape(data));
+    buffer.append(divider.rbegin(), divider.rend());
+    Send(buffer);
     return packageId;
 }
 
-void MessageClient::SendCommand(const Buffer &data, command_callback cb) {
+void MessageClient::SendCommand(const string &data, command_callback cb) {
     int packageId = SendMessage(data);
     commandCallbacks[packageId] = std::move(cb);
 }
 
-Buffer MessageClient::escape(const Buffer &data) {
-    DynamicBuffer buffer(0);
+string MessageClient::escape(const string &data) {
+    string buffer;
     for (char iter : data) {
         if(iter == DIVIDER[0] || iter == DIVIDER[1] || iter == ESCAPE_CHAR) {
-            buffer.Append(ESCAPE_CHAR);
+            buffer.push_back(ESCAPE_CHAR);
         }
-        buffer.Append(iter);
+        buffer.push_back(iter);
     }
     return buffer;
 }
 
-Buffer MessageClient::unescape(const Buffer &data) {
-    DynamicBuffer buffer(data.size());
+string MessageClient::unescape(const string &data) {
+    string buffer;
+    buffer.reserve(data.size());
     for(auto iter = data.begin(); iter != data.end() - 1; iter++) {
         if(*iter == ESCAPE_CHAR &&
                 (*(iter+1) == DIVIDER[0] ||
@@ -51,33 +47,33 @@ Buffer MessageClient::unescape(const Buffer &data) {
                  *(iter+1) == ESCAPE_CHAR)) {
             continue;
         }
-        buffer.Append(*iter);
+        buffer.push_back(*iter);
     }
     return buffer;
 }
 
-void MessageClient::onDataRecived(const char *data, ssize_t len) {
+void MessageClient::onDataRecived(const string &data) {
     static char lastChar = 0;
     static bool inPackage = false;
-    auto iter = data;
+    auto iter = data.begin();
     do {
         if(lastChar == DIVIDER[0] && *iter == DIVIDER[1]) {
             // package start
-            reciveBuffer.Clear();
+            reciveBuffer.clear();
             inPackage = true;
         } else if(lastChar == DIVIDER[1] && *iter == DIVIDER[0]) {
             // package end
-            int packageId = *(int *)reciveBuffer.cbegin();
+            int packageId = *(int *)reciveBuffer.data();
             auto result = commandCallbacks.find(packageId);
             if(result != commandCallbacks.end()) {
-                result->second(Buffer(reciveBuffer.begin() + 4, reciveBuffer.size() - 5));
+                result->second(string(reciveBuffer.data() + 4, reciveBuffer.size() - 5));
             }
             inPackage = false;
         } else if(inPackage) {
-            reciveBuffer.Append(*iter);
+            reciveBuffer.push_back(*iter);
         }
 
         lastChar = *iter;
-    } while(iter++ < data + len);
+    } while(iter++ < data.end());
 
 }

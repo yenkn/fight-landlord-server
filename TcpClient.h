@@ -7,7 +7,9 @@
 
 #include <ev++.h>
 #include <list>
-#include "Buffer.h"
+#include <string>
+
+using std::string;
 
 class TcpClient {
 public:
@@ -16,15 +18,15 @@ public:
 
     ~TcpClient();
 
-    void Send(const char * data, size_t len);
+    void Send(const string &);
 
 protected:
-    virtual void onDataRecived(const char *data, ssize_t len);
+    virtual void onDataRecived(const string &);
 
 private:
     int client_fd;
     ev::io ev_io;
-    std::list<Buffer *> write_queue;
+    std::list<string> writeQueue;
 
     void callback(ev::io &watcher, int revents);
     void readCallback(ev::io &watcher);

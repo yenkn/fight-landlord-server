@@ -8,38 +8,38 @@
 #include <memory>
 #include <map>
 #include <functional>
+#include <string>
 #include "TcpClient.h"
-#include "DynamicBuffer.h"
 
 using std::unique_ptr;
 using std::map;
 using std::function;
+using std::string;
 
 class MessageClient: public TcpClient {
 public:
-    typedef function<void(const Buffer &)> command_callback;
+    typedef function<void(const string &)> command_callback;
 
     explicit MessageClient(int fd);
     MessageClient(const MessageClient &client): TcpClient(client) {}
-    ~MessageClient();
 
-    int SendMessage(const Buffer &);
+    int SendMessage(const string &);
 
-    static Buffer escape(const Buffer &data);
-    static Buffer unescape(const Buffer &data);
+    static string escape(const string &data);
+    static string unescape(const string &data);
 
-    void SendCommand(const Buffer &data, command_callback cb);
+    void SendCommand(const string &data, command_callback cb);
 
 protected:
     static const char ESCAPE_CHAR = '\\';
     static const char DIVIDER[];
 
-    void onDataRecived(const char *data, ssize_t len);
+    void onDataRecived(const string &);
 
 private:
     map<int, command_callback> commandCallbacks;
     int currentPackageId = 0;
-    DynamicBuffer reciveBuffer;
+    string reciveBuffer;
 };
 
 

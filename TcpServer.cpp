@@ -77,7 +77,7 @@ void TcpServer<T>::signalCallback(ev::sig &signal, int revents) {
 
 template <typename T>
 void TcpServer<T>::OnClientArrived(client_type &client) {
-    client.SendCommand(Buffer("Hello from server!"), [](const Buffer &buf) {
+    client.SendCommand(string("Hello from server!"), [](const string &buf) {
         printf("returns: %s", buf.begin());
     });
 }

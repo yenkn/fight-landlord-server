@@ -3,5 +3,5 @@ project(fight_landlord_server)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(fight_landlord_server main.cpp TcpServer.cpp TcpServer.h TcpClient.cpp TcpClient.h DynamicBuffer.cpp DynamicBuffer.h Buffer.h MessageClient.cpp MessageClient.h)
+add_executable(fight_landlord_server main.cpp TcpServer.cpp TcpServer.h TcpClient.cpp TcpClient.h MessageClient.cpp MessageClient.h)
 target_link_libraries(fight_landlord_server libev.a)
